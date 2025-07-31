@@ -13,39 +13,52 @@ const TodoApp = () => {
   const [users, setUsers] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
+  // FIND THIS LINE:
+// const [editText, setEditText] = useState('');
 
-  // Mock authentication
-  const handleAuth = () => {
-    
-    if (isLogin) {
-      // Login
-      const existingUser = users.find(u => u.email === formData.email && u.password === formData.password);
-      if (existingUser) {
-        setUser(existingUser);
-        setTodos(existingUser.todos || []);
-      } else {
-        alert('Invalid credentials! Try signing up first.');
-      }
+// ADD THESE TWO LINES AFTER IT:
+const [errorMessage, setErrorMessage] = useState('');
+const [successMessage, setSuccessMessage] = useState('');
+
+  // NEW CODE (USE THIS):
+const handleAuth = () => {
+  setErrorMessage('');
+  setSuccessMessage('');
+  
+  if (isLogin) {
+    // Login
+    const existingUser = users.find(u => u.email === formData.email && u.password === formData.password);
+    if (existingUser) {
+      setUser(existingUser);
+      setTodos(existingUser.todos || []);
+      setSuccessMessage('Welcome back!');
     } else {
-      // Sign up
-      if (users.find(u => u.email === formData.email)) {
-        alert('User already exists!');
-        return;
-      }
-      const newUser = {
-        id: Date.now(),
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        todos: []
-      };
-      setUsers([...users, newUser]);
-      setUser(newUser);
-      setTodos([]);
+      setErrorMessage('Invalid email or password. Please try again.');
     }
-    setFormData({ email: '', password: '', name: '' });
-  };
-
+  } else {
+    // Sign up
+    if (users.find(u => u.email === formData.email)) {
+      setErrorMessage('Email already exists. Please use a different email.');
+      return;
+    }
+    if (!formData.name || !formData.email || !formData.password) {
+      setErrorMessage('Please fill in all fields.');
+      return;
+    }
+    const newUser = {
+      id: Date.now(),
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      todos: []
+    };
+    setUsers([...users, newUser]);
+    setUser(newUser);
+    setTodos([]);
+    setSuccessMessage('Account created successfully!');
+  }
+  setFormData({ email: '', password: '', name: '' });
+};
   const handleLogout = () => {
     // Save todos to user
     const updatedUsers = users.map(u => 
@@ -55,19 +68,26 @@ const TodoApp = () => {
     setUser(null);
     setTodos([]);
   };
-
-  const addTodo = () => {
-    if (newTodo.trim()) {
-      const todo = {
-        id: Date.now(),
-        text: newTodo.trim(),
-        completed: false,
-        createdAt: new Date().toLocaleDateString()
-      };
-      setTodos([...todos, todo]);
-      setNewTodo('');
-    }
+// NEW CODE:
+const addTodo = () => {
+  if (!newTodo.trim()) {
+    setErrorMessage('Please enter a task before adding.');
+    setTimeout(() => setErrorMessage(''), 3000);
+    return;
+  }
+  
+  const todo = {
+    id: Date.now(),
+    text: newTodo.trim(),
+    completed: false,
+    createdAt: new Date().toLocaleDateString()
   };
+  setTodos([...todos, todo]);
+  setNewTodo('');
+  setErrorMessage('');
+  setSuccessMessage('Task added successfully!');
+  setTimeout(() => setSuccessMessage(''), 2000);
+};
 
   const toggleTodo = (id) => {
     setTodos(todos.map(todo => 
@@ -100,21 +120,45 @@ const TodoApp = () => {
   };
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="text-white" size={32} />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              {isLogin ? 'Welcome Back' : 'Join TodoMaster'}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {isLogin ? 'Sign in to continue' : 'Create your account'}
-            </p>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        {/* Home Page Header */}
+        <div className="text-center mb-8">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <User className="text-white" size={40} />
           </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+            QuickTask
+          </h1>
+          <p className="text-gray-600 text-lg mb-4">Your Personal Task Manager</p>
+          <div className="bg-blue-50 rounded-lg p-3 mb-6">
+            <p className="text-blue-700 text-sm font-medium">✨ Organize • Prioritize • Achieve</p>
+          </div>
+        </div>
 
+        {/* Auth Section Header */}
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            {isLogin ? 'Welcome Back!' : 'Get Started Today'}
+          </h2>
+          <p className="text-gray-600">
+            {isLogin ? 'Sign in to access your tasks' : 'Create your free account'}
+          </p>
+        </div>
+
+        {/* Error/Success Messages */}
+        {errorMessage && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+            <p className="text-red-700 text-sm font-medium">❌ {errorMessage}</p>
+          </div>
+        )}
+        
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+            <p className="text-green-700 text-sm font-medium">✅ {successMessage}</p>
+          </div>
+        )}
           <div className="space-y-4">
             {!isLogin && (
               <div>
@@ -209,8 +253,23 @@ const TodoApp = () => {
 
       <div className="max-w-4xl mx-auto p-6">
         {/* Add Todo Form */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex gap-3">
+{/* Add Todo Form */}
+<div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+  {/* Error Message for Empty Task */}
+  {errorMessage && (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+      <p className="text-red-700 text-sm font-medium">❌ {errorMessage}</p>
+    </div>
+  )}
+  
+  {/* Success Message */}
+  {successMessage && (
+    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+      <p className="text-green-700 text-sm font-medium">✅ {successMessage}</p>
+    </div>
+  )}
+  
+  <div className="flex gap-3">
             <input
               type="text"
               value={newTodo}
